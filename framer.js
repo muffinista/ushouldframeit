@@ -5,31 +5,49 @@ var tmp = require('tmp');
 var exec = require('child_process').execFileSync;
 
 var frames = JSON.parse(fs.readFileSync("frames.json"));
-var frame_ids = _.keys(frames);
+
 
 const MATTE_MULTIPLIER = 0.95;
 const MATTE_COLOR = 'white';
 
 
+/**
+ * find and return a random frame from our collection of frames. we will sort/filter our list
+ * by aspect ratio to try and find some that fit relatively well.
+ */
+var getRandomFrame = function(r) {
+    var sortedFrames = _.slice(
+        _.sortBy(
+            _.map(frames, function(f) {
+                return _.merge({ r1: f.coords[2] / f.coords[3], r2: f.coords[3] / f.coords[2] }, f);
+            }),
+            function(f) {
+                var diff1 = Math.abs(r - f.r1);
+                var diff2 = Math.abs(r - f.r2);
+
+                if ( diff1 > diff2 ) {
+                    return -1 * diff1;
+                }
+                return -1 * diff2;
+            }),
+            0, 10);
+
+    return _.sample(sortedFrames);
+};
+
 var frameIt = function(src, cb) {
     var tmpFile = tmp.fileSync({postfix: '.jpg', keep:true});
 
-    //# random image frame
-    var image_id = _.sample(frame_ids);
-    var x = frames[image_id]["coords"][0];
-    var y = frames[image_id]["coords"][1];
-    var w = frames[image_id]["coords"][2];
-    var h = frames[image_id]["coords"][3];
-
-    var path = "frames/" + image_id + ".png";
+    var frame;
+    var image_id, x, y, w, h;
+    var path;
 
     var w_mult = 1.0;
     var h_mult = 1.0;
 
-    console.log(frames[image_id]);
-    console.log(`use image ${image_id} ${x} ${y} ${w} ${h}`);
+    var src_height, src_width, src_is_portrait, pre_rotation, post_rotation, aspect_ratio;
 
-    var src_height, src_width, src_is_portrait, pre_rotation, post_rotation;
+    console.log("SOURCE: " + src);
 
     pre_rotation = 0;
     post_rotation = 0;
@@ -45,6 +63,21 @@ var frameIt = function(src, cb) {
 
         src_width = data.size.width;
         src_height = data.size.height;
+
+        aspect_ratio = src_width/src_height;
+        console.log("aspect ratio: " + aspect_ratio);
+
+        frame = getRandomFrame(aspect_ratio);
+
+        image_id = frame.id;
+        x = frame["coords"][0];
+        y = frame["coords"][1];
+        w = frame["coords"][2];
+        h = frame["coords"][3];
+
+        path = "frames/" + image_id + ".png";
+
+        console.log(frames[image_id]);
 
         if ( src_width > src_height ) {
             w_mult = MATTE_MULTIPLIER;
@@ -77,7 +110,7 @@ var frameIt = function(src, cb) {
         console.log(cmd);
         exec('convert', cmd);
 
-        console.log(`resize source to ${w * w_mult}, ${h * h_mult}`);
+        //console.log(`resize source to ${w * w_mult}, ${h * h_mult}`);
 
         // 3) do compositing
         console.log("let's composite");
@@ -86,7 +119,7 @@ var frameIt = function(src, cb) {
             "-compose", "dst-over",
             tmpFile.name,
             "-geometry", `+${x}+${y}`,
-            `${image_id}.png`,
+            path,
             tmpFile.name];
 
         console.log(cmd.join(' '));
@@ -110,4 +143,5 @@ var frameIt = function(src, cb) {
 
 
 
+exports.getRandomFrame = getRandomFrame;
 exports.frameIt = frameIt;
