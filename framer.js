@@ -6,6 +6,7 @@ var exec = require('child_process').execFileSync;
 
 var frames = JSON.parse(fs.readFileSync("frames.json"));
 var frame_ids = _.keys(frames);
+
 const MATTE_MULTIPLIER = 0.95;
 const MATTE_COLOR = 'white';
 
@@ -13,26 +14,20 @@ const MATTE_COLOR = 'white';
 var frameIt = function(src, cb) {
     var tmpFile = tmp.fileSync({postfix: '.jpg', keep:true});
 
-    console.log(tmpFile);
-
     //# random image frame
     var image_id = _.sample(frame_ids);
-    console.log(frames[image_id]);
     var x = frames[image_id]["coords"][0];
     var y = frames[image_id]["coords"][1];
     var w = frames[image_id]["coords"][2];
     var h = frames[image_id]["coords"][3];
 
-    var path = image_id + ".png";
+    var path = "frames/" + image_id + ".png";
 
     var w_mult = 1.0;
     var h_mult = 1.0;
 
-
+    console.log(frames[image_id]);
     console.log(`use image ${image_id} ${x} ${y} ${w} ${h}`);
-
-
-    // 4) optionally rotate output
 
     var src_height, src_width, src_is_portrait, pre_rotation, post_rotation;
 
@@ -43,6 +38,11 @@ var frameIt = function(src, cb) {
     // 1) get dimensions of incoming image, and make some decisions about what to do with it
     //
     gm(src).identify(function (err, data) {
+        if ( err ) {
+            cb(undefined, err.toString());
+            return;
+        }
+
         src_width = data.size.width;
         src_height = data.size.height;
 
@@ -91,7 +91,6 @@ var frameIt = function(src, cb) {
 
         console.log(cmd.join(' '));
         exec('composite', cmd);
-
 
         if ( post_rotation !== 0 ) {
             console.log("rotate final output");
