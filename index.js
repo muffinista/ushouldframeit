@@ -31,6 +31,12 @@ controller.hears(["keyword", "frame"],["direct_message", "direct_mention", "ment
 
     if ( typeof(result) !== "undefined" ) {
         var url = result[0];
+        
+        // dropbox copy/paste URLs aren't to the actual file, but we can hack a path here
+        if ( url.indexOf("dropbox.com") !== -1 ) {
+            url = url.replace("?dl=0", "?dl=1");
+        }
+
         var tmpFile = tmp.fileSync();
 
         request(url).
