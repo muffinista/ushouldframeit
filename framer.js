@@ -7,7 +7,9 @@ var exec = require('child_process').execFileSync;
 var frames = JSON.parse(fs.readFileSync("frames.json"));
 
 
-const MATTE_MULTIPLIER = 0.95;
+
+const MIN_MATTE_MULTIPLIER = 0.97;
+const MATTE_MULTIPLIER = 0.94;
 const MATTE_COLOR = 'white';
 
 
@@ -30,7 +32,7 @@ var getRandomFrame = function(r) {
                 }
                 return -1 * diff2;
             }),
-            0, 10);
+            0, 15);
 
     return _.sample(sortedFrames);
 };
@@ -42,8 +44,8 @@ var frameIt = function(src, cb) {
     var image_id, x, y, w, h;
     var path;
 
-    var w_mult = 1.0;
-    var h_mult = 1.0;
+    var w_mult = MIN_MATTE_MULTIPLIER;
+    var h_mult = MIN_MATTE_MULTIPLIER;
 
     var src_height, src_width, src_is_portrait, pre_rotation, post_rotation, aspect_ratio;
 
@@ -138,10 +140,9 @@ var frameIt = function(src, cb) {
 
         cb(tmpFile, undefined);
     });
-
 };
-
 
 
 exports.getRandomFrame = getRandomFrame;
 exports.frameIt = frameIt;
+
