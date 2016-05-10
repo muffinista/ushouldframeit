@@ -77,19 +77,7 @@ controller.on('rtm_close',function(bot) {
 });
 
 
-//var bot = controller.spawn({
-//  token: conf.slack_token
-//});
-
-
 imgur.setClientID(conf.imgur_client_id);
-
-
-//bot.startRTM(function(err,bot,payload) {
-//  if (err) {
-//    throw new Error('Could not connect to Slack');
-//  }
-//});
 
 
 controller.hears(["keyword", "frame"],["direct_message", "direct_mention", "mention"],function(bot,message) {
