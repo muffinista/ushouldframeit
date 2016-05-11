@@ -80,55 +80,47 @@ controller.on('rtm_close',function(bot) {
 imgur.setClientID(conf.imgur_client_id);
 
 
-controller.hears(["keyword", "frame"],["direct_message", "direct_mention", "mention"],function(bot,message) {
-    console.log(message);
+controller.hears(["keyword", "frame"],["direct_message", "direct_mention"],function(bot,message) {
+  console.log(message);
 
-    var pattern = /(?:https?:\/\/[\-A-Z0-9+\u0026\u2019@#\/%?=()~_|!:,.;]*[\-A-Z0-9+\u0026@#\/%=~()_|])/gi;
-    var result = pattern.exec(message.text);
+  var pattern = /(?:https?:\/\/[\-A-Z0-9+\u0026\u2019@#\/%?=()~_|!:,.;]*[\-A-Z0-9+\u0026@#\/%=~()_|])/gi;
+  var result = pattern.exec(message.text);
 
-    if ( typeof(result) !== "undefined" ) {
-        var url = result[0];
-        
-        // dropbox copy/paste URLs aren't to the actual file, but we can hack a path here
-        if ( url.indexOf("dropbox.com") !== -1 ) {
-            url = url.replace("?dl=0", "?dl=1");
-        }
-
-        var tmpFile = tmp.fileSync();
-
-        request(url).
-            on('end', function() {
-                framer.frameIt(tmpFile.name, function(file, err) {
-                    console.log(file);
-                    console.log(err);
-                    if ( typeof(err) !== "undefined" ) {
-                        bot.reply(message, `Sorry, something went wrong: ${err}`);
-                    }
-                    else {
-                        try {
-                            imgur.upload(file.name, function (err, res) {
-                                var response = "I framed this for you: " + res.data.link;
-                                console.log(res.data.link);
-                                bot.reply(message, response);
-                            });
-                        }
-                        catch (e) {
-                            bot.reply(message, `Sorry, something went wrong: ${e.toString()}`);
-                        }
-                    }
-                });
-            }).
-            pipe(fs.createWriteStream(tmpFile.name));
-
-
-
-
+  if ( typeof(result) !== "undefined" ) {
+    var url = result[0];
+    
+    // dropbox copy/paste URLs aren't to the actual file, but we can hack a path here
+    if ( url.indexOf("dropbox.com") !== -1 ) {
+      url = url.replace("?dl=0", "?dl=1");
     }
+
+    var tmpFile = tmp.fileSync();
+
+    request(url). on('end', function() {
+      framer.frameIt(tmpFile.name, function(file, err) {
+        console.log(file);
+        console.log(err);
+        if ( typeof(err) !== "undefined" ) {
+          bot.reply(message, `Sorry, something went wrong: ${err}`);
+        }
+        else {
+          try {
+            imgur.upload(file.name, function (err, res) {
+              var response = "I framed this for you: " + res.data.link;
+              console.log(res.data.link);
+              bot.reply(message, response);
+            });
+          }
+          catch (e) {
+            bot.reply(message, `Sorry, something went wrong: ${e.toString()}`);
+          }
+        }
+      });
+    }).pipe(fs.createWriteStream(tmpFile.name));
+  }
 });
 
-
 controller.storage.teams.all(function(err,teams) {
-
   if (err) {
     throw new Error(err);
   }
@@ -145,5 +137,5 @@ controller.storage.teams.all(function(err,teams) {
       });
     }
   }
-
+  
 });
